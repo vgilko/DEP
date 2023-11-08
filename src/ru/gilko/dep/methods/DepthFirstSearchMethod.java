@@ -2,17 +2,18 @@ package ru.gilko.dep.methods;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import ru.gilko.dep.domain.Edge;
 import ru.gilko.dep.domain.Vertex;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 @Data
-@Slf4j
 @RequiredArgsConstructor
-public class BreadthSearchMethod implements SearchMethod {
-    private final Queue<Vertex> allowable = new LinkedList<>();
+public class DepthFirstSearchMethod implements SearchMethod {
+    private final Stack<Vertex> allowable = new Stack<>();
     private final Set<Vertex> restricted = new HashSet<>();
 
     private boolean isFound = false;
@@ -23,23 +24,22 @@ public class BreadthSearchMethod implements SearchMethod {
 
     @Override
     public boolean canReachVertex() {
-        isFound = false;
-        allowable.add(beginVertex);
+        allowable.push(beginVertex);
 
         while (!allowable.isEmpty()) {
             if (isFound) {
                 return true;
             }
 
-            findDescendants();
+            getDescendants(allowable.peek());
         }
 
-        return isFound;
+        return false;
     }
 
-    private void findDescendants() {
+    private void getDescendants(Vertex target) {
         for (Edge edge : graph) {
-            if (isAllowableDescendant(allowable.peek(), edge)) {
+            if (edge.begin().equals(target) && !restricted.contains(edge.end())) {
                 if (isDesiredVertex(edge)) {
                     System.out.printf("Last edge before target: -%d-> [%d]%n", edge.id(), endVertex.getId());
 
@@ -47,18 +47,18 @@ public class BreadthSearchMethod implements SearchMethod {
                     return;
                 }
 
-                allowable.add(edge.end());
+                allowable.push(edge.end());
+                return;
             }
         }
 
-        restricted.add(allowable.poll());
+        if (allowable.peek().equals(target)) {
+            restricted.add(target);
+            allowable.pop();
+        }
     }
 
     private boolean isDesiredVertex(Edge edge) {
-        return edge.end().getId() == endVertex.getId();
-    }
-
-    private boolean isAllowableDescendant(Vertex target, Edge edge) {
-        return edge.begin().equals(target) && !restricted.contains(edge.end());
+        return edge.end().equals(endVertex);
     }
 }
